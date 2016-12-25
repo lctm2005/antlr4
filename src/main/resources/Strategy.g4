@@ -28,8 +28,6 @@ arroperator: IN | NOTIN;
 
 value: STRING | INT;
 
-
-
 STRING : '"' .*? '"' ;
 ID : ('a'..'z' |'A'..'Z')+ ;
 INT : '0'..'9' + ;
