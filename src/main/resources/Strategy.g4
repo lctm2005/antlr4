@@ -1,18 +1,21 @@
-grammar Strategy; // Define a grammar called Hello
+grammar Strategy; // TODO AND OR 存在优先级问题，需要考虑
 
 prog: stat;
 
-stat: logicExpr;
+stat: filterExpr orderExpr?  limitExpr?;
 
-logicExpr: expr((('&&'|'||') expr)+ | (ORDERBY keywords (ASC | DESC)?) | (LIMIT INT));
+filterExpr:expr((AND|OR) expr)?;
 
-expr: '(' logicExpr ')'| atom;
+limitExpr:LIMIT INT;
 
-atom: keywords (operator value | arroperator array);
+orderExpr:ORDER KEYWORDS (ASC | DESC)?;
 
-test: ASC | DESC;
+expr: BRACKET_OPEN expr((AND|OR) expr)+ BRACKET_CLOSE| atom;
 
-keywords:  'question.knowledge'
+atom: KEYWORDS OPERATOR VALUE | KEYWORDS ARROPERATOR ARRAY;
+
+
+KEYWORDS:  'question.knowledge'
         |  'question.hard'
         |  'question.type'
         |  'question.bank'
@@ -20,31 +23,38 @@ keywords:  'question.knowledge'
         |  'user_question.update_time'
         |  'user_question.key_wrong_question';
 
-array: '[' value(','value)*  ']';
+ARRAY: PARENTHESES_OPEN VALUE(COMMA VALUE)*  PARENTHESES_CLOSE;
+OPERATOR: EQ | NE | GT | GE | LE | LT;
+ARROPERATOR: IN | NOTIN;
+VALUE: STRING | INT;
 
-operator: EQ | NEQ | GT | GE | LE | LT;
+COMMA:',' | '%2C';
+PARENTHESES_OPEN:'[' | '%5B';
+PARENTHESES_CLOSE:']' | '%5D';
+BRACKET_OPEN : '(' | '%28';
+BRACKET_CLOSE : ')' | '%29';
 
-arroperator: IN | NOTIN;
+ORDER:'order';
+LIMIT:' limit';
+AND:'and';
+OR:'or';
 
-value: STRING | INT;
+ASC             : 'asc';
+DESC            : 'desc';
+
+GT              : 'gt';
+GE              : 'ge';
+LT              : 'lt';
+LE              : 'le';
+
+EQ              : 'eq';
+NE              : 'ne';
+
+NOTIN             : 'notin';
+IN              : 'in';
 
 STRING : '"' .*? '"' ;
 ID : ('a'..'z' |'A'..'Z')+ ;
-INT : '0'..'9' + ;
+INT : '0'..'9'+ ;
 WS : [ \t\r\n]+ -> skip ;// skip spaces, tabs, newlines, \r(Windows)
-
-EQ:'==';
-NEQ:'!=';
-GT:'>';
-GE:'>=';
-LE:'<=';
-LT:'<';
-
-IN:'in';
-NOTIN:'notin';
-
-ORDERBY:'orderby';
-ASC:'asc';
-DESC:'desc';
-LIMIT:'limit';
 
