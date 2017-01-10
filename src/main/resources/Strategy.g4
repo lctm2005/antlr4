@@ -8,9 +8,9 @@ filterExpr:expr((AND|OR) expr)?;
 
 limitExpr:LIMIT INT;
 
-orderExpr:ORDER KEYWORDS (ASC | DESC)?;
+orderExpr:ORDER KEYWORDS(COMMA KEYWORDS)* (ASC | DESC)?;
 
-expr: BRACKET_OPEN expr((AND|OR) expr)+ BRACKET_CLOSE| atom;
+expr: BRACKET_OPEN expr((AND|OR) expr)+ BRACKET_CLOSE| expr((AND|OR) expr)+ | atom;
 
 atom: KEYWORDS OPERATOR VALUE | KEYWORDS ARROPERATOR ARRAY;
 

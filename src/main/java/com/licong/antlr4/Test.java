@@ -15,6 +15,7 @@ public class Test {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         StrategyParser parser = new StrategyParser(tokens);
         ParseTree parseTree = parser.prog();
+
         StrategyBaseVisitor visitor = new StrategyBaseVisitor();
         visitor.visit(parseTree);
         System.out.println(parseTree.toStringTree(parser));

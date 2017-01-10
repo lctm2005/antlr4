@@ -41,12 +41,6 @@ public interface StrategyVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitOrderExpr(StrategyParser.OrderExprContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link StrategyParser#logicExpr}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitLogicExpr(StrategyParser.LogicExprContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link StrategyParser#expr}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
