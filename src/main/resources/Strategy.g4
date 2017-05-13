@@ -18,11 +18,11 @@ gqlParam
     ;
 
 filterExpr
-    : OPEN WSP? filterExpr WSP? CLOSE                  #bracket
-    | section WSP INTERSECTION WSP section             #intersection
-    | section WSP UNION WSP section                    #union
-    | section WSP SUBTRACTION WSP section              #subtraction
-    | COMPLEMENTARY WSP section                        #complementary
+    : OPEN WSP? filterExpr WSP? CLOSE         #bracket
+    | section WSP AND WSP section             #and
+    | section WSP OR WSP section              #or
+    | section WSP MINUS WSP section           #minus
+    | NOT WSP section                         #not
     ;
 
 section
@@ -30,13 +30,9 @@ section
     ;
 
 conditionExpr
-    : conditionExpr WSP ConditionOperator WSP conditionExpr   #condition
-    | memberLiteral WSP LIKE WSP constantLiteral        #like
-    | memberLiteral WSP IN WSP? constantLiteralList     #in
-    | conditionExpr WSP AND WSP conditionExpr           #and
-    | conditionExpr WSP OR WSP conditionExpr            #or
-    | constantLiteral                                   #constant
-    | memberLiteral                                     #member
+    : memberLiteral WSP ConditionOperator WSP constantLiteral   #condition
+    | memberLiteral WSP LIKE WSP constantLiteral                #like
+    | memberLiteral WSP IN WSP? constantLiteralList             #in
     ;
 
 selectExpr : memberLiteral (WSP? COMMA WSP? memberLiteral)*;
@@ -48,6 +44,7 @@ orderItem
     ;
 
 memberLiteral: IDENTITY (DOT IDENTITY)*;
+//memberLiteral: IDENTITY;
 
 constantLiteral
     : NULL          #null
@@ -64,7 +61,7 @@ constantLiteralList
     :  OPEN WSP? constantLiteral (WSP? COMMA WSP? constantLiteral)* WSP? CLOSE
     ;
 
-ConditionOperator : GT | GE | LT | LE | EQ | NE;
+ConditionOperator : GT | GE | LT | LE | EQ | NE ;
 
 //Letters for case insensitivity
 fragment A    : 'A'|'a';
@@ -161,11 +158,6 @@ NE              : 'ne';
 
 AND             : 'and';
 OR              : 'or';
-
-INTERSECTION    : AND;        //交集
-UNION           : OR;         //并集
-SUBTRACTION     : 'minus';   //差集
-COMPLEMENTARY   : NOT;        //补集
 
 NOT             : 'not';
 IN              : 'in';
