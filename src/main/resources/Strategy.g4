@@ -7,14 +7,9 @@ gqlExpr
     | gqlParam (AMPERSAND gqlParam)*
     ;
 
-
 gqlParam
     : FILTER EQUAL filterExpr   #filter
-    | SELECT EQUAL selectExpr   #select
     | LIMIT EQUAL INT           #limit
-    | OFFSET EQUAL INT          #offset
-    | ORDER EQUAL orderExpr     #order
-    | RESULT EQUAL RESULT_VALUE #result
     ;
 
 filterExpr
@@ -22,7 +17,7 @@ filterExpr
     | section WSP AND WSP section             #and
     | section WSP OR WSP section              #or
     | section WSP MINUS WSP section           #minus
-    | NOT WSP section                         #not
+    | section                                 #sectionOnly
     ;
 
 section
@@ -30,21 +25,13 @@ section
     ;
 
 conditionExpr
-    : memberLiteral WSP ConditionOperator WSP constantLiteral   #condition
-    | memberLiteral WSP LIKE WSP constantLiteral                #like
-    | memberLiteral WSP IN WSP? constantLiteralList             #in
-    ;
-
-selectExpr : memberLiteral (WSP? COMMA WSP? memberLiteral)*;
-orderExpr: orderItem (WSP? COMMA WSP? orderItem)*;
-
-orderItem
-    : memberLiteral (WSP ASC)?  #asc
-    | memberLiteral WSP DESC    #desc
+    : memberLiteral WSP EQ WSP constantLiteral              #eq
+    | memberLiteral WSP IN WSP? constantLiteralList         #in
+    | NOT WSP? memberLiteral                                #not
+    | memberLiteral                                         #memberOnly
     ;
 
 memberLiteral: IDENTITY (DOT IDENTITY)*;
-//memberLiteral: IDENTITY;
 
 constantLiteral
     : NULL          #null
@@ -60,8 +47,6 @@ constantLiteral
 constantLiteralList
     :  OPEN WSP? constantLiteral (WSP? COMMA WSP? constantLiteral)* WSP? CLOSE
     ;
-
-ConditionOperator : GT | GE | LT | LE | EQ | NE ;
 
 //Letters for case insensitivity
 fragment A    : 'A'|'a';
@@ -144,31 +129,16 @@ fragment UUIDVALUE      : HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDI
                           HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG;
 UUID                    : UUIDVALUE;
 
-//expression tokens
-ASC             : 'asc';
-DESC            : 'desc';
-
-GT              : 'gt';
-GE              : 'ge';
-LT              : 'lt';
-LE              : 'le';
-
 EQ              : 'eq';
-NE              : 'ne';
 
 AND             : 'and';
 OR              : 'or';
 
-NOT             : 'not';
+NOT             : '!';
 IN              : 'in';
-LIKE            : 'like';
 FILTER          : '$filter';
-SELECT          : '$select';
 LIMIT           : '$limit';
-OFFSET          : '$offset';
-ORDER           : '$order';
-RESULT          : '$result';
-RESULT_VALUE    : 'list'|'count'|'pager';
+
 IDENTITY        : ODI_LEADINGCHARACTER ODI_CHARACTER*;
 STRING          : '\'' (ESC | .)*? '\'';
 fragment ESC    : '\\' [btnr'\\];
