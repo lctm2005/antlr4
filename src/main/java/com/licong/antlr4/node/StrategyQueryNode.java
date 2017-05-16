@@ -9,23 +9,23 @@ import java.util.List;
  * Created by vime on 2015/12/11.
  */
 public class StrategyQueryNode extends StrategyNode {
-    private StrategyFilterNode filterNode;
-    private StrategyLimitNode limitNode;
+    private FilterNode filterNode;
+    private LimitNode limitNode;
 
-    public StrategyFilterNode getFilterNode() {
+    public FilterNode getFilterNode() {
         return filterNode;
     }
 
-    public void setFilterNode(StrategyFilterNode filterNode) {
+    public void setFilterNode(FilterNode filterNode) {
         this.filterNode = filterNode;
     }
 
 
-    public StrategyLimitNode getLimitNode() {
+    public LimitNode getLimitNode() {
         return limitNode;
     }
 
-    public void setLimitNode(StrategyLimitNode limitNode) {
+    public void setLimitNode(LimitNode limitNode) {
         this.limitNode = limitNode;
     }
 

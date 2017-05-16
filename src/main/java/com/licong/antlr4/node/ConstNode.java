@@ -8,10 +8,10 @@ import java.util.Date;
 /**
  * Created by vime on 2015/12/11.
  */
-public class StrategyConstNode extends StrategyNode {
+public class ConstNode extends StrategyNode {
     private Object value;
 
-    public StrategyConstNode(Object value) {
+    public ConstNode(Object value) {
         this.value = value;
     }
 

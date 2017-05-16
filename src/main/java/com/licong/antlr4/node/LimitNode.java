@@ -3,10 +3,10 @@ package com.licong.antlr4.node;
 /**
  * Created by vime on 2015/12/11.
  */
-public class StrategyLimitNode extends StrategyNode {
+public class LimitNode extends StrategyNode {
     private int value;
 
-    public StrategyLimitNode(int value) {
+    public LimitNode(int value) {
         this.value = value;
     }
 

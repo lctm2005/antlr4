@@ -3,10 +3,10 @@ package com.licong.antlr4.node;
 /**
  * Created by vime on 2015/12/11.
  */
-public class StrategyMemberNode extends StrategyNode {
+public class MemberNode extends StrategyNode {
     private String member;
 
-    public StrategyMemberNode(String member) {
+    public MemberNode(String member) {
         this.member = member;
     }
 

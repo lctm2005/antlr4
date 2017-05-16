@@ -14,21 +14,18 @@ gqlParam
 
 filterExpr
     : OPEN WSP? filterExpr WSP? CLOSE         #bracket
-    | section WSP AND WSP section             #and
-    | section WSP OR WSP section              #or
-    | section WSP MINUS WSP section           #minus
-    | section                                 #sectionOnly
+    | filterExpr WSP AND WSP filterExpr       #and
+    | filterExpr WSP OR WSP filterExpr        #or
+    | filterExpr WSP MINUS WSP filterExpr     #minus
+    | NOT WSP? filterExpr                     #not
+    | BRACE_OPEN WSP? conditionExpr WSP? BRACE_CLOSE      #section
     ;
 
-section
-    :BRACE_OPEN WSP? conditionExpr WSP? BRACE_CLOSE
-    ;
 
 conditionExpr
     : memberLiteral WSP EQ WSP constantLiteral              #eq
     | memberLiteral WSP IN WSP? constantLiteralList         #in
-    | NOT WSP? memberLiteral                                #not
-    | memberLiteral                                         #memberOnly
+    | memberLiteral                                         #member
     ;
 
 memberLiteral: IDENTITY (DOT IDENTITY)*;
@@ -80,7 +77,7 @@ fragment WS     : ( ' ' | '%09' | '%20' | '%09' );
 WSP             : WS+;
 PLUS            : '+';
 EQUAL           : '=';
-MINUS           : '-';
+MINUS           : 'minus';
 DOT             : '.';
 
 //alpha stuff
@@ -134,7 +131,7 @@ EQ              : 'eq';
 AND             : 'and';
 OR              : 'or';
 
-NOT             : '!';
+NOT             : 'not';
 IN              : 'in';
 FILTER          : '$filter';
 LIMIT           : '$limit';

@@ -1,4 +1,4 @@
-package com.licong.antlr4;
+package com.licong.antlr4.visitor;
 
 import com.licong.antlr4.gen.StrategyBaseVisitor;
 import com.licong.antlr4.gen.StrategyParser;
@@ -23,65 +23,76 @@ public class StrategyVistorImpl extends StrategyBaseVisitor<StrategyNode> implem
 
         StrategyQueryNode queryNode = new StrategyQueryNode();
         for (StrategyNode gqlNode : defaultNode.getNodes()) {
-            if (gqlNode instanceof StrategyFilterNode)
-                queryNode.setFilterNode((StrategyFilterNode) gqlNode);
-            else if (gqlNode instanceof StrategyLimitNode)
-                queryNode.setLimitNode((StrategyLimitNode) gqlNode);
+            if (gqlNode instanceof FilterNode)
+                queryNode.setFilterNode((FilterNode) gqlNode);
+            else if (gqlNode instanceof LimitNode)
+                queryNode.setLimitNode((LimitNode) gqlNode);
         }
         return queryNode;
     }
 
     @Override
+    public StrategyNode visitMember(StrategyParser.MemberContext ctx) {
+        return visit(ctx.memberLiteral());
+    }
+
+    @Override
     public StrategyNode visitFilter(StrategyParser.FilterContext ctx) {
-        StrategyNode node = visit(ctx.filterExpr());
-        return new StrategyFilterNode((StrategyBooleanNode) node);
+        StrategyNode strategyNode = visit(ctx.filterExpr());
+        if (strategyNode instanceof SectionOperateNode) {
+            return new FilterNode((SectionOperateNode) strategyNode);
+        }
+        if (strategyNode instanceof SectionNode) {
+            return new FilterNode(new SectionOperateNode(strategyNode, SectionOperate.NONE, null));
+        }
+        return strategyNode;
     }
 
     @Override
     public StrategyNode visitLimit(StrategyParser.LimitContext ctx) {
-        return new StrategyLimitNode(Integer.parseInt(ctx.INT().getText()));
+        return new LimitNode(Integer.parseInt(ctx.INT().getText()));
     }
 
     @Override
     public StrategyNode visitOr(StrategyParser.OrContext ctx) {
-        StrategyNode leftValue = visit(ctx.section(0));
-        StrategyNode rightValue = visit(ctx.section(1));
+        StrategyNode leftValue = visit(ctx.filterExpr(0));
+        StrategyNode rightValue = visit(ctx.filterExpr(1));
 
-        return new StrategyBooleanNode(leftValue, Operate.OR, rightValue);
+        return new SectionOperateNode(leftValue, SectionOperate.OR, rightValue);
     }
 
     @Override
     public StrategyNode visitIn(StrategyParser.InContext ctx) {
         StrategyNode leftValue = visit(ctx.memberLiteral());
-        List<StrategyConstNode> consts = new ArrayList<StrategyConstNode>();
+        List<ConstNode> consts = new ArrayList<ConstNode>();
         for (StrategyParser.ConstantLiteralContext constantLiteralContext : ctx.constantLiteralList().constantLiteral()) {
-            consts.add((StrategyConstNode) visit(constantLiteralContext));
+            consts.add((ConstNode) visit(constantLiteralContext));
         }
-        return new StrategyBooleanNode(leftValue, Operate.IN, new StrategyConstListNode(consts));
+        return new ConditionNode(leftValue, Operate.IN, new ConstListNode(consts));
     }
 
     @Override
     public StrategyNode visitAnd(StrategyParser.AndContext ctx) {
-        StrategyNode leftValue = visit(ctx.section(0));
-        StrategyNode rightValue = visit(ctx.section(1));
+        StrategyNode leftValue = visit(ctx.filterExpr(0));
+        StrategyNode rightValue = visit(ctx.filterExpr(1));
 
-        return new StrategyBooleanNode(leftValue, Operate.AND, rightValue);
+        return new SectionOperateNode(leftValue, SectionOperate.AND, rightValue);
     }
 
 
     @Override
     public StrategyNode visitMemberLiteral(StrategyParser.MemberLiteralContext ctx) {
-        return new StrategyMemberNode(ctx.getText());
+        return new MemberNode(ctx.getText());
     }
 
     @Override
     public StrategyNode visitNull(StrategyParser.NullContext ctx) {
-        return new StrategyConstNode(null);
+        return new ConstNode(null);
     }
 
     @Override
     public StrategyNode visitBool(StrategyParser.BoolContext ctx) {
-        return new StrategyConstNode(Boolean.parseBoolean(ctx.getText()));
+        return new ConstNode(Boolean.parseBoolean(ctx.getText()));
     }
 
     @Override
@@ -95,34 +106,34 @@ public class StrategyVistorImpl extends StrategyBaseVisitor<StrategyNode> implem
         text = text.replace("\\r", "\r");
         text = text.replaceAll("(?<!\\\\)\\\\(?!\\\\)", "");
         text = text.replace("\\\\", "\\");
-        return new StrategyConstNode(text);
+        return new ConstNode(text);
     }
 
     @Override
     public StrategyNode visitInt(StrategyParser.IntContext ctx) {
-        return new StrategyConstNode(Long.parseLong(ctx.getText()));
+        return new ConstNode(Long.parseLong(ctx.getText()));
     }
 
     @Override
     public StrategyNode visitDecimal(StrategyParser.DecimalContext ctx) {
-        return new StrategyConstNode(Double.parseDouble(ctx.getText()));
+        return new ConstNode(Double.parseDouble(ctx.getText()));
     }
 
     @Override
     public StrategyNode visitDate(StrategyParser.DateContext ctx) {
         Calendar calendar = DatatypeConverter.parseDate(ctx.getText());
-        return new StrategyConstNode(calendar.getTime());
+        return new ConstNode(calendar.getTime());
     }
 
     @Override
     public StrategyNode visitDatetime(StrategyParser.DatetimeContext ctx) {
         Calendar calendar = DatatypeConverter.parseDate(ctx.getText());
-        return new StrategyConstNode(calendar.getTime());
+        return new ConstNode(calendar.getTime());
     }
 
     @Override
     public StrategyNode visitUuid(StrategyParser.UuidContext ctx) {
-        return new StrategyConstNode(UUID.fromString(ctx.getText()));
+        return new ConstNode(UUID.fromString(ctx.getText()));
     }
 
     @Override
@@ -132,32 +143,30 @@ public class StrategyVistorImpl extends StrategyBaseVisitor<StrategyNode> implem
 
     @Override
     public StrategyNode visitMinus(StrategyParser.MinusContext ctx) {
-        return new StrategyBooleanNode(visit(ctx.section(0)), Operate.MINUS, visit(ctx.section(1)));
-    }
-
-    @Override
-    public StrategyNode visitSectionOnly(StrategyParser.SectionOnlyContext ctx) {
-        return visit(ctx.section());
+        return new SectionOperateNode(visit(ctx.filterExpr(0)), SectionOperate.MINUS, visit(ctx.filterExpr(1)));
     }
 
     @Override
     public StrategyNode visitSection(StrategyParser.SectionContext ctx) {
-        return new StrategySectionNode((StrategyBooleanNode) visit(ctx.conditionExpr()));
+        StrategyNode strategyNode = visit(ctx.conditionExpr());
+        if (strategyNode instanceof ConditionNode) {
+            return new SectionNode((ConditionNode) strategyNode);
+        }
+        if (strategyNode instanceof MemberNode) {
+            return new SectionNode(new ConditionNode(strategyNode, Operate.NONE, null));
+        }
+        return strategyNode;
     }
 
     @Override
     public StrategyNode visitEq(StrategyParser.EqContext ctx) {
-        return new StrategyBooleanNode(visit(ctx.memberLiteral()), Operate.EQ, visit(ctx.constantLiteral()));
+        return new ConditionNode(visit(ctx.memberLiteral()), Operate.EQ, visit(ctx.constantLiteral()));
     }
 
-    @Override
-    public StrategyNode visitMemberOnly(StrategyParser.MemberOnlyContext ctx) {
-        return super.visit(ctx.memberLiteral());
-    }
 
     @Override
     public StrategyNode visitNot(StrategyParser.NotContext ctx) {
-        return new StrategyBooleanNode(null, Operate.NOT, visit(ctx.memberLiteral()));
+        return new SectionOperateNode(null, SectionOperate.NOT, visit(ctx.filterExpr()));
     }
 
     @Override

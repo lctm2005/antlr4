@@ -3,14 +3,14 @@ package com.licong.antlr4.node;
 /**
  * Created by vime on 2015/12/11.
  */
-public class StrategySectionNode extends StrategyNode {
-    private StrategyBooleanNode body;
+public class FilterNode extends StrategyNode {
+    private SectionOperateNode body;
 
-    public StrategySectionNode(StrategyBooleanNode body) {
+    public FilterNode(SectionOperateNode body) {
         this.body = body;
     }
 
-    public StrategyBooleanNode getBody() {
+    public SectionOperateNode getBody() {
         return body;
     }
 
@@ -22,6 +22,6 @@ public class StrategySectionNode extends StrategyNode {
 
     @Override
     public String toString() {
-        return "{" + body + "}";
+        return "$filter=" + body;
     }
 }

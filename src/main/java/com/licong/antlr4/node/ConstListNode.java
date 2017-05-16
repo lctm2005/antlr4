@@ -7,10 +7,10 @@ import java.util.List;
 /**
  * Created by vime on 2015/12/15.
  */
-public class StrategyConstListNode extends StrategyNode {
-    private List<StrategyConstNode> consts;
+public class ConstListNode extends StrategyNode {
+    private List<ConstNode> consts;
 
-    public StrategyConstListNode(List<StrategyConstNode> consts) {
+    public ConstListNode(List<ConstNode> consts) {
         this.consts = consts;
     }
 
@@ -19,7 +19,7 @@ public class StrategyConstListNode extends StrategyNode {
         return StrategyNodeType.ConstList;
     }
 
-    public List<StrategyConstNode> getConsts() {
+    public List<ConstNode> getConsts() {
         return consts;
     }
 
