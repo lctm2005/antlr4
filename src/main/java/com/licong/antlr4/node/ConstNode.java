@@ -8,7 +8,7 @@ import java.util.Date;
 /**
  * Created by vime on 2015/12/11.
  */
-public class ConstNode extends StrategyNode {
+public class ConstNode implements StrategyNode {
     private Object value;
 
     public ConstNode(Object value) {
@@ -17,11 +17,6 @@ public class ConstNode extends StrategyNode {
 
     public Object getValue() {
         return value;
-    }
-
-    @Override
-    public StrategyNodeType getType() {
-        return StrategyNodeType.Const;
     }
 
     @Override

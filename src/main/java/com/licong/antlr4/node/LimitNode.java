@@ -3,7 +3,7 @@ package com.licong.antlr4.node;
 /**
  * Created by vime on 2015/12/11.
  */
-public class LimitNode extends StrategyNode {
+public class LimitNode implements StrategyNode {
     private int value;
 
     public LimitNode(int value) {
@@ -14,10 +14,6 @@ public class LimitNode extends StrategyNode {
         return value;
     }
 
-    @Override
-    public StrategyNodeType getType() {
-        return StrategyNodeType.Limit;
-    }
 
     @Override
     public String toString() {

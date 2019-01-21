@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Created by vime on 2015/12/11.
  */
-public class StrategyDefaultNode extends StrategyNode {
+public class StrategyDefaultNode implements StrategyNode {
     private List<StrategyNode> nodes;
 
     public StrategyDefaultNode() {
@@ -17,10 +17,6 @@ public class StrategyDefaultNode extends StrategyNode {
         return nodes;
     }
 
-    @Override
-    public StrategyNodeType getType() {
-        return StrategyNodeType.Default;
-    }
 
     @Override
     public String toString() {

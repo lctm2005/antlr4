@@ -4,18 +4,19 @@ import com.licong.antlr4.gen.StrategyBaseVisitor;
 import com.licong.antlr4.gen.StrategyParser;
 import com.licong.antlr4.gen.StrategyVisitor;
 import com.licong.antlr4.node.*;
+import lombok.Data;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import javax.xml.bind.DatatypeConverter;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Created by vime on 2015/12/11.
  */
+@Data
 public class StrategyVistorImpl extends StrategyBaseVisitor<StrategyNode> implements StrategyVisitor<StrategyNode> {
+
+    private Queue<String> queue = new LinkedList<String>();
 
     @Override
     public StrategyNode visitGqlExpr(StrategyParser.GqlExprContext ctx) {
@@ -23,10 +24,22 @@ public class StrategyVistorImpl extends StrategyBaseVisitor<StrategyNode> implem
 
         StrategyQueryNode queryNode = new StrategyQueryNode();
         for (StrategyNode gqlNode : defaultNode.getNodes()) {
-            if (gqlNode instanceof FilterNode)
+            if (gqlNode instanceof FilterNode) {
                 queryNode.setFilterNode((FilterNode) gqlNode);
-            else if (gqlNode instanceof LimitNode)
+                if (((FilterNode) gqlNode).getBody() instanceof SectionNode) {
+                    queue.add("GET " + (((FilterNode) gqlNode).getBody()).toString());
+                }
+                if (((FilterNode) gqlNode).getBody() instanceof LogicalNode) {
+                    LogicalNode logicalNode = (LogicalNode) ((FilterNode) gqlNode).getBody();
+                    String destkey = logicalNode.getDesKey();
+                    queue.add(logicalNode.toString());
+                    queue.add("EXPIRE " + destkey + " 10");
+                }
+            } else if (gqlNode instanceof LimitNode) {
                 queryNode.setLimitNode((LimitNode) gqlNode);
+            } else if (gqlNode instanceof ResultNode) {
+                queryNode.setResultNode((ResultNode) gqlNode);
+            }
         }
         return queryNode;
     }
@@ -39,13 +52,7 @@ public class StrategyVistorImpl extends StrategyBaseVisitor<StrategyNode> implem
     @Override
     public StrategyNode visitFilter(StrategyParser.FilterContext ctx) {
         StrategyNode strategyNode = visit(ctx.filterExpr());
-        if (strategyNode instanceof SectionOperateNode) {
-            return new FilterNode((SectionOperateNode) strategyNode);
-        }
-        if (strategyNode instanceof SectionNode) {
-            return new FilterNode(new SectionOperateNode(strategyNode, SectionOperate.NONE, null));
-        }
-        return strategyNode;
+        return new FilterNode(strategyNode);
     }
 
     @Override
@@ -57,8 +64,9 @@ public class StrategyVistorImpl extends StrategyBaseVisitor<StrategyNode> implem
     public StrategyNode visitOr(StrategyParser.OrContext ctx) {
         StrategyNode leftValue = visit(ctx.filterExpr(0));
         StrategyNode rightValue = visit(ctx.filterExpr(1));
-
-        return new SectionOperateNode(leftValue, SectionOperate.OR, rightValue);
+        LogicalNode logicalNode = new LogicalNode(LogicalType.OR);
+        mergeChildren(logicalNode, leftValue, rightValue);
+        return logicalNode;
     }
 
     @Override
@@ -68,15 +76,37 @@ public class StrategyVistorImpl extends StrategyBaseVisitor<StrategyNode> implem
         for (StrategyParser.ConstantLiteralContext constantLiteralContext : ctx.constantLiteralList().constantLiteral()) {
             consts.add((ConstNode) visit(constantLiteralContext));
         }
-        return new ConditionNode(leftValue, Operate.IN, new ConstListNode(consts));
+        return new SectionNode(leftValue, Operate.IN, new ConstListNode(consts));
     }
 
     @Override
     public StrategyNode visitAnd(StrategyParser.AndContext ctx) {
         StrategyNode leftValue = visit(ctx.filterExpr(0));
         StrategyNode rightValue = visit(ctx.filterExpr(1));
+        LogicalNode logicalNode = new LogicalNode(LogicalType.AND);
+        mergeChildren(logicalNode, leftValue, rightValue);
+        return logicalNode;
+    }
 
-        return new SectionOperateNode(leftValue, SectionOperate.AND, rightValue);
+    private void mergeChildren(LogicalNode parent, StrategyNode... children) {
+        for (StrategyNode child : children) {
+            if (child instanceof SectionNode) {
+                parent.addRedisKey(child.toString());
+                continue;
+            }
+            if (child instanceof LogicalNode) {
+                if (!((LogicalNode) child).getType().equals(parent.getType())) {
+                    // 异类生成指令
+                    String destkey = ((LogicalNode) child).getDesKey();
+                    queue.add(child.toString());
+                    queue.add("EXPIRE " + destkey + " 10");
+                    parent.addRedisKey(destkey);
+                } else {
+                    // 同类操作合并
+                    parent.addRedisKeys(((LogicalNode) child).getRedisKeys());
+                }
+            }
+        }
     }
 
 
@@ -143,30 +173,37 @@ public class StrategyVistorImpl extends StrategyBaseVisitor<StrategyNode> implem
 
     @Override
     public StrategyNode visitMinus(StrategyParser.MinusContext ctx) {
-        return new SectionOperateNode(visit(ctx.filterExpr(0)), SectionOperate.MINUS, visit(ctx.filterExpr(1)));
+        StrategyNode leftValue = visit(ctx.filterExpr(0));
+        StrategyNode rightValue = visit(ctx.filterExpr(1));
+        LogicalNode logicalNode = new LogicalNode(LogicalType.XOR);
+        mergeChildren(logicalNode, leftValue, rightValue);
+        return logicalNode;
     }
 
     @Override
     public StrategyNode visitSection(StrategyParser.SectionContext ctx) {
         StrategyNode strategyNode = visit(ctx.conditionExpr());
-        if (strategyNode instanceof ConditionNode) {
-            return new SectionNode((ConditionNode) strategyNode);
+        if (strategyNode instanceof SectionNode) {
+            return strategyNode;
         }
         if (strategyNode instanceof MemberNode) {
-            return new SectionNode(new ConditionNode(strategyNode, Operate.NONE, null));
+            return new SectionNode(strategyNode, Operate.NONE, null);
         }
         return strategyNode;
     }
 
     @Override
     public StrategyNode visitEq(StrategyParser.EqContext ctx) {
-        return new ConditionNode(visit(ctx.memberLiteral()), Operate.EQ, visit(ctx.constantLiteral()));
+        return new SectionNode(visit(ctx.memberLiteral()), Operate.EQ, visit(ctx.constantLiteral()));
     }
 
 
     @Override
     public StrategyNode visitNot(StrategyParser.NotContext ctx) {
-        return new SectionOperateNode(null, SectionOperate.NOT, visit(ctx.filterExpr()));
+        StrategyNode strategyNode = visit(ctx.filterExpr());
+        LogicalNode logicalNode = new LogicalNode(LogicalType.NOT);
+        mergeChildren(logicalNode, strategyNode, null);
+        return logicalNode;
     }
 
     @Override
@@ -193,5 +230,13 @@ public class StrategyVistorImpl extends StrategyBaseVisitor<StrategyNode> implem
     @Override
     public StrategyNode visitTerminal(TerminalNode node) {
         return null;
+    }
+
+    @Override
+    public StrategyNode visitResult(StrategyParser.ResultContext ctx) {
+        String rs = ctx.RESULT_VALUE().getText().toUpperCase();
+        rs = rs.substring(0, 1) + rs.substring(1);
+        ResultMode result = ResultMode.valueOf(rs);
+        return new ResultNode(result);
     }
 }

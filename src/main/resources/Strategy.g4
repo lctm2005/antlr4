@@ -10,6 +10,7 @@ gqlExpr
 gqlParam
     : FILTER EQUAL filterExpr   #filter
     | LIMIT EQUAL INT           #limit
+    | RESULT EQUAL RESULT_VALUE #result
     ;
 
 filterExpr
@@ -135,7 +136,8 @@ NOT             : 'not';
 IN              : 'in';
 FILTER          : '$filter';
 LIMIT           : '$limit';
-
+RESULT          : '$result';
+RESULT_VALUE    : 'list'|'count';
 IDENTITY        : ODI_LEADINGCHARACTER ODI_CHARACTER*;
 STRING          : '\'' (ESC | .)*? '\'';
 fragment ESC    : '\\' [btnr'\\];

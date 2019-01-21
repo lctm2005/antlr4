@@ -7,17 +7,13 @@ import java.util.List;
 /**
  * Created by vime on 2015/12/15.
  */
-public class ConstListNode extends StrategyNode {
+public class ConstListNode implements StrategyNode {
     private List<ConstNode> consts;
 
     public ConstListNode(List<ConstNode> consts) {
         this.consts = consts;
     }
 
-    @Override
-    public StrategyNodeType getType() {
-        return StrategyNodeType.ConstList;
-    }
 
     public List<ConstNode> getConsts() {
         return consts;

@@ -3,21 +3,15 @@ package com.licong.antlr4.node;
 /**
  * Created by vime on 2015/12/11.
  */
-public class FilterNode extends StrategyNode {
-    private SectionOperateNode body;
+public class FilterNode implements StrategyNode {
+    private StrategyNode body;
 
-    public FilterNode(SectionOperateNode body) {
+    public FilterNode(StrategyNode body) {
         this.body = body;
     }
 
-    public SectionOperateNode getBody() {
+    public StrategyNode getBody() {
         return body;
-    }
-
-
-    @Override
-    public StrategyNodeType getType() {
-        return StrategyNodeType.Filter;
     }
 
     @Override
